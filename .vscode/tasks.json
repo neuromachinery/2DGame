@@ -1,0 +1,37 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build Windows",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "main-x86_64-w64-mingw32",
+                "-DSDLTTF_SAMPLES=ON"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build Linux",
+            "type": "shell",
+            "command": "cmake",
+            "args": [
+                "--build",
+                "--preset",
+                "main-x86_64-linux-gnu",
+                "-DSDLTTF_SAMPLES=ON"
+            ],
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "Build All",
+            "dependsOn": ["Build Windows", "Build Linux"],
+            "dependsOrder": "sequence",
+            "group": "build"
+        }
+    ]
+}

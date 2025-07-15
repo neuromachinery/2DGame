@@ -1,0 +1,25 @@
+{
+    "configurations": [
+    {
+    "name": "Debug Linux Binary",
+    "type": "cppdbg",
+    "request": "launch",
+    "program": "${workspaceFolder}/out/build/main-x86_64-linux-gnu/Debug/main-x86_64-linux-gnu",
+    "args": [],
+    "stopAtEntry": false,
+    "cwd": "${workspaceFolder}",
+    "environment": [],
+    "externalConsole": false,
+    "MIMode": "gdb",
+    "preLaunchTask": "Build Linux",
+    "miDebuggerPath": "/usr/bin/gdb",
+    "setupCommands": [
+        {
+            "description": "Enable pretty-printing for gdb",
+            "text": "-enable-pretty-printing",
+            "ignoreFailures": true
+        }
+    ]
+}
+    ]
+}

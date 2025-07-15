@@ -1,0 +1,40 @@
+{
+    "equipables":{
+        "rifle":{
+            "name":"ak",
+            "desc":"AK-47",
+            "ranged":{
+                "projectile":"7.62x39",
+                "range":200
+            },
+            "accepts":["mag30x7.62x39"],
+            "loaded":{}
+
+        }
+    },
+    "wearables":{
+        "armor_1":{
+            "name":"armor",
+            "desc":"Bodyarmor",
+            "protection":[0,1,0,0]
+        }
+    },
+    "items":{
+        "grenade":{
+            "name":"grenade",
+            "desc":"M67",
+            "function":["throw","explode"]
+        },
+        "bullet7-62-39":{
+            "name":"7.62x39",
+            "desc":"A single 7.62x39 bullet"
+        },
+        "mag30x7.62x39":{
+            "name":"Standard 7.62x39 magazine",
+            "desc":"One 30 round mag for 7.62x39. Curvy",
+            "container_type":"single",
+            "contains":"bullet7-62-39",
+            "contain_count":30
+        }
+    }
+}

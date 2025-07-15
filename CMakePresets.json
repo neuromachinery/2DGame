@@ -1,0 +1,44 @@
+{
+    "version": 8,
+    "configurePresets": [
+        {
+            "name": "main-x86_64-linux-gnu",
+            "displayName": "GCC 14.2.0 x86_64-linux-gnu",
+            "description": "Using compilers: C = /usr/bin/gcc, CXX = /usr/bin/g++",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/out/install/${presetName}",
+                "CMAKE_C_COMPILER": "/usr/bin/gcc",
+                "CMAKE_CXX_COMPILER": "/usr/bin/g++",
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "main-x86_64-w64-mingw32-gcc",
+            "displayName": "GCC 13-win32 x86_64-w64-mingw32",
+            "description": "Using compilers: C = /usr/bin/x86_64-w64-mingw32-gcc",
+            "binaryDir": "${sourceDir}/out/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "/usr/bin/x86_64-w64-mingw32-gcc",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_SYSROOT": "/usr/x86_64-w64-mingw32/sys-root/mingw",
+                "CMAKE_C_FLAGS": "--sysroot=/usr/x86_64-w64-mingw32/sys-root/mingw",
+                "CMAKE_CXX_FLAGS": "--sysroot=/usr/x86_64-w64-mingw32/sys-root/mingw"
+            }
+
+
+        }
+    ],
+    "buildPresets": [
+  {
+    "name": "main-x86_64-linux-gnu",
+    "configurePreset": "main-x86_64-linux-gnu"
+  },
+  {
+    "name": "main-x86_64-w64-mingw32-gcc",
+    "configurePreset": "main-x86_64-w64-mingw32-gcc"
+  }
+
+]
+
+}

@@ -1,0 +1,18 @@
+{
+    "stone1": 0,
+    "bluebrick": 1,
+    "redbrick": 2,
+    "cobblestone": 3,
+    "stone2": 4,
+    "dirt": 5,
+    "sand1": 6,
+    "sand2": 7,
+    "wood": 8,
+    "woodbright": 9,
+    "crate": 10,
+    "grass1": 11,
+    "grass2": 12,
+    "milcamo1": 13,
+    "milcamo2": 14,
+    "milcamo3": 15
+}
