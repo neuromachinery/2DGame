@@ -11,7 +11,7 @@ add_subdirectory(vendored/SDL EXCLUDE_FROM_ALL)
 add_subdirectory(vendored/SDL3_ttf EXCLUDE_FROM_ALL)
 add_subdirectory(vendored/SDL3_image EXCLUDE_FROM_ALL)
 # Create your game executable target as usual
-add_executable(main-x86_64-linux-gnu WIN32 main.c)
+add_executable(main-x86_64-linux-gnu WIN32 main.c xmlparser.c jsonreader.c)
 
 # Link to the actual SDL3 library.
 #target_link_libraries(main-x86_64-linux-gnu PRIVATE SDL3::SDL3)

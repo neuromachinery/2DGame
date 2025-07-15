@@ -1,14 +1,11 @@
 
 #define SDL_MAIN_USE_CALLBACKS 1  /* use the callbacks instead of main() */
-#define MAX_ITEMS 256
-#define MAX_NAME_LEN 50
-#define HEALTH_VALUES 4
-#define MAX_ACTORS 4
 #define MAP_SIZE 512
 #define DESCRIPTION_LENGTH 20
 #define SCREEN_AMOUNT 3
 #define ERROR 1
 #define NORMAL 0
+#define MAX_NAME_LEN 50
 #define DEFAULT_BG 50,50,50,255
 #define DEFAULT_FG 255,255,255,255
 #define DEFAULT_NOTICE 255,10,10,255
@@ -20,6 +17,8 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <SDL3_image/SDL_image.h>
 #include <cJSON.h>
+#include "xmlparser.h"
+#include "jsonreader.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -29,33 +28,14 @@ static SDL_Renderer *renderer = NULL;
 cJSON *characters_json;
 cJSON *items_json;
 
-typedef struct{
-    char equipped[MAX_ITEMS][MAX_NAME_LEN];
-    int equipped_count;
 
-    char stored[MAX_ITEMS][MAX_NAME_LEN];
-    int stored_count;
-} Inventory;
-struct Actor{
-        SDL_FRect ActorRect;
-        int positionHeight; //0=prone,1=sitting,2=on one knee,3=standing
-        float speed;
-        SDL_Color ActorColor;
-        float halfWidth;
-        float halfHeight;
-        char name[MAX_NAME_LEN];
-        Inventory inventory;
-        int health[HEALTH_VALUES];
-        int money;
-        
-};
 typedef struct {
     uint16_t tiles[MAP_SIZE*MAP_SIZE];
     uint16_t object_tiles[MAP_SIZE*MAP_SIZE];
 }Map;
 Map *LoadedMaps;
 int LoadedMaps_size=0;
-struct Actor Actors[MAX_ACTORS];
+
 typedef struct{
     SDL_FRect FRect;
     void (*buttonFunc)(void *arg);
@@ -139,113 +119,38 @@ float SnapToGrid(float x, float y, float w, float h, float *return_x, float *ret
     *return_x = snap_x;
     *return_y = snap_y;
 }
-int ReadJSON(char *path,cJSON **json){
-    // open the file
-    FILE *fp = fopen(path, "r");
-    if (fp == NULL) {
-        printf("Error: Unable to open the file.\n");
-        return 1;
-    }
 
-    // read the file contents into a string
-    char buffer[2048];
-    int len = fread(buffer, 1, sizeof(buffer), fp);
-    fclose(fp);
-
-    // parse the JSON data
-    *json = cJSON_Parse(buffer);
-    if (*json == NULL) {
-        const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            printf("Error: %s\n", error_ptr);
-        }
-        return 1;
-    }
-    return 0;
-}
-void parse_inventory_array(cJSON *array, char dest[MAX_ITEMS][MAX_NAME_LEN], int *count) {
-    int size = cJSON_GetArraySize(array);
-    *count = size > MAX_ITEMS ? MAX_ITEMS : size;
-    for (int i = 0; i < *count; i++) {
-        cJSON *item = cJSON_GetArrayItem(array, i);
-        if (item->valuestring != NULL) {
-            strncpy(dest[i], item->valuestring, MAX_NAME_LEN);
-            dest[i][MAX_NAME_LEN-1] = '\0';
-        } else {
-            dest[i][0] = '\0';
-        }
-    }
-}
-void parse_actor_json(cJSON *actor_json, struct Actor *actor, int i, int window_x, int window_y, int gridScale) {
-    // Parse name (use "name" field if exists, else fallback to JSON key)
-    cJSON *name = cJSON_GetObjectItem(actor_json, "name");
-    if (name->valuestring) {
-        strncpy(actor->name, name->valuestring, MAX_NAME_LEN);
-    } else if (actor_json->string) {
-        strncpy(actor->name, actor_json->string, MAX_NAME_LEN);
-    } else {
-        strcpy(actor->name, "unknown");
-    }
-    actor->name[MAX_NAME_LEN-1] = '\0';
-
-    // Parse inventory
-    cJSON *inventory = cJSON_GetObjectItem(actor_json, "inventory");
-    if (inventory) {
-        cJSON *equipped = cJSON_GetObjectItem(inventory, "equipped");
-        parse_inventory_array(equipped, actor->inventory.equipped, &actor->inventory.equipped_count);
-
-        cJSON *stored = cJSON_GetObjectItem(inventory, "stored");
-        parse_inventory_array(stored, actor->inventory.stored, &actor->inventory.stored_count);
-    } else {
-        actor->inventory.equipped_count = 0;
-        actor->inventory.stored_count = 0;
-    }
-
-    // Parse speed
-    cJSON *speed = cJSON_GetObjectItem(actor_json, "speed");
-    actor->speed = (float)speed->valueint;
-
-
-    // Parse health array
-    cJSON *health = cJSON_GetObjectItem(actor_json, "health");
-        int size = cJSON_GetArraySize(health);
-        for (int j = 0; j < HEALTH_VALUES; j++) {
-        cJSON *h = cJSON_GetArrayItem(health, j);
-        actor->health[j] = h->valueint;
-        }
-    cJSON *money = cJSON_GetObjectItem(actor_json, "money");
-    actor->money = money->valueint;
-    // Set SDL-related fields
-    int i_high = i & 1;
-    int i_low = (i & 2) >> 1;
-    actor->ActorRect.x = (float)window_x * (float)i_high;
-    actor->ActorRect.y = (float)window_y * (float)i_low;
-    actor->ActorRect.h = gridScale;
-    actor->ActorRect.w = gridScale;
-    actor->halfHeight = gridScale * 0.5f;
-    actor->halfWidth = gridScale * 0.5f;
-
-    SDL_Color color = {255, 85 * i, 255 - 85 * i, 255};
-    actor->ActorColor = color;
-}
-void parse_characters(cJSON *characters_json, int window_x, int window_y, int gridScale) {
-    cJSON *temp = characters_json->child;  // first actor (assuming root is an object)
-    int i = 0;
-
-    while (temp != NULL) {
-        // temp->string is the actor key (e.g., "john")
-        // temp is the actor JSON object
-
-        if (temp!=NULL) {
-            parse_actor_json(temp, &Actors[i], i, window_x, window_y, gridScale);
-            i++;
-        }
-        temp = temp->next;
-    }
-}
 
 void ChangeEditorCellType(void *arg){
     EditorCurrentCellType = *(int*)arg;
+}
+int LoadAnimations(){
+    FILE *f = fopen("resources/prototype_character.xml", "r");
+    if (!f) {
+        perror("Failed to open XML file");
+        return ERROR;
+    }
+
+    SpriteSheet sheet;
+    if (!parse_spritesheet(f, &sheet)) {
+        printf("Failed to parse spritesheet.\n");
+        fclose(f);
+        return ERROR;
+    }
+    fclose(f);
+
+    printf("Image: %s (%dx%d)\n", sheet.image_name, sheet.width, sheet.height);
+    printf("Animations: %d\n", sheet.animation_count);
+    for (int i = 0; i < sheet.animation_count; i++) {
+        Animation *anim = &sheet.animations[i];
+        printf("  Animation %d: %s (%d sprites)\n", i, anim->name, anim->sprite_count);
+        for (int j = 0; j < anim->sprite_count; j++) {
+            Sprite *spr = &anim->sprites[j];
+            printf("    Sprite %d: name='%s', x=%f, y=%f, w=%f, h=%f\n",
+                j, spr->name, spr->FRect.x, spr->FRect.y, spr->FRect.w, spr->FRect.h);
+        }
+    }
+    return NORMAL;
 }
 int LoadAllTextures(){
     SDL_Surface *spriteMaterialSheetSurface = IMG_Load("resources/Textures-small.png");
@@ -255,13 +160,10 @@ int LoadAllTextures(){
         printf("Failed to load sprite sheet: %s",SDL_GetError());
         return ERROR;
     }
+    
     spriteMaterialSheet = SDL_CreateTextureFromSurface(renderer, spriteMaterialSheetSurface);
     SDL_DestroySurface(spriteMaterialSheetSurface);
     SDL_SetTextureScaleMode(spriteMaterialSheet,SDL_SCALEMODE_PIXELART);
-    
-    //spriteCharacterSheet = SDL_CreateTextureFromSurface(renderer, spriteCharacterSheetSurface);
-    //SDL_DestroySurface(spriteCharacterSheetSurface);
-    //if(!spriteMaterialSheet || !spriteCharacterSheet){
     if(!spriteMaterialSheet){
         printf("Sprite error: %s\n",SDL_GetError());
     }
@@ -273,13 +175,14 @@ int LoadAllTextures(){
         SDL_FRect textureFRect = {i*h,0,h,h};
         MaterialSpriteFRects[i] = textureFRect;
     }
-    //SDL_GetTextureSize(spriteCharacterSheet,&w,&h);
-    //CharacterSpriteFRects = malloc(spriteCount*sizeof(SDL_FRect));
-    //float halfh = h/2;
-    //for(int i=0;i<spriteCount;i++){
-    //    SDL_FRect textureFRect = {i*halfh,0,halfh,h};
-    //    CharacterSpriteFRects[i] = textureFRect;
-    //}
+    FILE *f = fopen("resources/Objects.xml", "r");
+    if (!f) {
+        perror("Failed to open XML file");
+        return 1;
+    }
+
+    fclose(f);
+
     return NORMAL;
 }
 void DrawCircle(SDL_Renderer * renderer, int32_t centreX, int32_t centreY, int32_t radius)
@@ -614,6 +517,7 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[])
         printf("%s\n",SDL_GetError());
     }
     if(LoadAllTextures()==ERROR){return SDL_APP_FAILURE;}
+    if(LoadAnimations()==ERROR){return SDL_APP_FAILURE;}
     SDL_GetRenderOutputSize(renderer, &w, &h);
     for (int i=0;i<SCREEN_AMOUNT;i++){
         InitFuncs[i]();
